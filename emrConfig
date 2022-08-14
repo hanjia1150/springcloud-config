@@ -1,0 +1,248 @@
+#--------------------------- app-monitor ----------------------------
+server:
+  port: 2222
+spring:
+  profiles: monitor
+  application:
+    name: emr-monitor
+  security:
+    user:
+      name: admin
+      password: admin
+---
+
+#--------------------------- emr-zuul ----------------------------
+server:
+  port: 9900
+spring:
+  profiles: zuul
+  application:
+    name: emr-zuul
+
+#hystrix信号量semaphore的设置，默认为100，决定了hystrix并发请求数
+zuul:
+  semaphore:
+   max-semaphores: 500
+---
+
+#--------------------------- meddoc-rest ----------------------------
+server:
+  port: 9999
+spring:
+  profiles: meddoc-rest
+  application:
+    name: meddoc-rest
+  datasource:
+    dynamic:
+      druid:
+        initialSize: 3
+        minIdle: 5
+        maxActive: 20
+        maxWait: 30000
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        maxEvictableIdleTimeMillis: 900000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        maxPoolPreparedStatementPerConnectionSize: 20
+        filters: stat
+        useGlobalDataSourceStat: true
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      primary: master
+      datasource:
+        master:
+          url: jdbc:oracle:thin:@192.168.150.52:1521/emrjjnew
+          username: meddoc
+          password: Meddoc2020
+          driverClassName:  oracle.jdbc.driver.OracleDriver
+---
+
+#--------------------------- medrec-browse ----------------------------
+server:
+  port: 8091
+spring:
+  profiles: medrec-browse
+  application:
+    name: medrec-browse
+  datasource:
+    dynamic:
+      druid:
+        initialSize: 3
+        minIdle: 5
+        maxActive: 20
+        maxWait: 30000
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        maxEvictableIdleTimeMillis: 900000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        maxPoolPreparedStatementPerConnectionSize: 20
+        filters: stat
+        useGlobalDataSourceStat: true
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      primary: master
+      datasource:
+        master:
+          url: jdbc:oracle:thin:@172.19.21.71:1521/orcl
+          username: meddoc
+          password: Meddoc2020
+          driverClassName:  oracle.jdbc.driver.OracleDriver
+        xdb:
+          url: jdbc:oracle:thin:@172.19.21.71:1521/orcl
+          username: meddoc
+          password: Meddoc2020
+          driverClassName:  oracle.jdbc.driver.OracleDriver
+
+#操作日志保留天数
+operationLog:
+  keep-days: 60
+
+#是否启用授权拦截
+authority:
+  interceptor:
+    enable: true
+
+parameter:
+  displaymodel: 4   # 病历展示模式：1 仅显示pdf  2 仅显示html  3 优先显示pdf  4 优先显示html
+#  filtertype: EMR100002|EMR100002F01  # 过滤不需展示的病历类型
+---
+
+#--------------------------ALL Application-------------------------
+
+#注册中心连接配置
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:7777/eureka
+  instance:
+    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+    prefer-ip-address: true
+
+#数据源配置
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@192.168.150.52:1521/pyemr
+    username: ihd
+    password: pyemr
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    # 连接池建立时创建的初始化连接数
+    initialSize: 3
+    # 连接池中最小的活跃连接数
+    minIdle: 5
+    # 连接池中最大的活跃连接数
+    maxActive: 20
+    # 获取连接等待超时的时间
+    maxWait: 30000
+    # 间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+    timeBetweenEvictionRunsMillis: 60000
+    # 一个连接在池中最小生存的时间，单位是毫秒
+    minEvictableIdleTimeMillis: 300000
+    maxEvictableIdleTimeMillis: 900000
+    validationQuery: SELECT 1 FROM DUAL
+    # 是否在连接空闲一段时间后检测其可用性
+    testWhileIdle: true
+    # 是否在获得连接后检测其可用性
+    testOnBorrow: false
+    # 是否在连接放回连接池后检测其可用性
+    testOnReturn: false
+    # 打开PSCache，并且指定每个连接上PSCache的大小
+    poolPreparedStatements: true
+    maxPoolPreparedStatementPerConnectionSize: 20
+    # 监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+    filters: stat
+    # 合并多个DruidDataSource的监控数据
+    useGlobalDataSourceStat: true
+    # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+  redis:
+    # Redis数据库索引（默认为0）
+    database: 0
+    host: 192.168.150.12
+    port: 26379
+    password: Ewell123
+    # 数据库连接超时时间，2.0 中该参数的类型为Duration，这里在配置的时候需要指明单位
+    timeout: 10s
+    # 连接池配置，2.0中直接使用jedis或者lettuce配置连接池
+    jedis:
+      pool:
+        # 最大空闲连接数
+        max-idle: 50
+        # 最小空闲连接数
+        min-idle: 5
+        # 等待可用连接的最大时间，负数为不限制
+        max-wait:  -1s
+        # 最大活跃连接数，负数为不限制
+        max-active: -1
+
+#是否启用Swagger测试
+swagger:
+  enable: 1
+
+#SpringBoot Admin 监控配置：http://www.ityouknow.com/springboot/2018/02/11/spring-boot-admin.html
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS
+
+#Logback日志打印输出方式
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl #org.apache.ibatis.logging.slf4j.Slf4jImpl【打印到文件实现类】
+  
+#增大tomcat中worker的最大线程数量
+server:
+  tomcat:
+    accept-count: 500 
+    max-threads: 500
+    max-connections: 1000
+    
+# 单点部署Zuul的压力测试与调优（二）
+# https://www.cnblogs.com/lonelyJay/p/10076441.html
+# https://juejin.im/post/5d54fd6af265da03be48d317
+ribbon:
+  #Ribbon允许最大连接数，即所有后端微服务实例请求并发数之和的最大值。
+  MaxTotalConnections: 500
+  #单个后端微服务实例能接收的最大请求并发数
+  MaxConnectionsPerHost: 500
+  #建议设置超时时间，以免因为等待时间过长造成请求处理失败（一）
+  #Http请求中的socketTimeout
+  ReadTimeout: 50000
+  #Http请求中的connectTimeout
+  ConnectTimeout: 50000
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 1
+
+#建议设置超时时间，以免因为等待时间过长造成请求处理失败（二）
+hystrix:
+  command:
+    default:
+      circuitBreaker:
+        #设置熔断器失败的个数，默认为20个，这里我给了1000个，只有超过1000个才会发生短路
+        requestVolumeThreshold: 500
+      execution:
+        #断路器超时设置和请求的超时
+        timeout:
+          enabled: true
+        isolation:
+          thread:
+            timeoutInMilliseconds: 400000
+      #设置回退的最大线程数
+      fallback:
+        isolation:
+          semaphore:
+            maxConcurrentRequests: 50
+  threadpool:
+    default:
+      coreSize: 50
+      maximumSize: 10000
+      maxQueueSize: -1
